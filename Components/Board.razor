@@ -1,0 +1,163 @@
+@inject GameState State
+@inject IJSRuntime JS
+@using System.Drawing
+@using Microsoft.JSInterop
+
+<HeadContent>
+    <style>
+        :root {
+            --board-bg: @ColorTranslator.ToHtml(BoardColor);
+            --player1: @ColorTranslator.ToHtml(Player1Color);
+            --player2: @ColorTranslator.ToHtml(Player2Color);
+        }
+    </style>
+</HeadContent>
+
+<nav>
+    @for (byte i = 0; i < 7; i++)
+    {
+        var col = i;
+        <span title="Click to play a piece" @onclick="() => PlayPiece(col)">🔽</span>
+    }
+</nav>
+
+<article>
+    @if (!string.IsNullOrEmpty(winnerMessage))
+    {
+        <span class="alert-danger">@winnerMessage</span>
+
+        <button class="reset-button"
+                @onclick="ResetGame">
+            Reset the game
+        </button>
+    }
+    else
+    {
+        <span class="alert-info">@CurrentTurn</span>
+    } 
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <span class="alert-danger">@errorMessage</span>
+    }
+
+    <p>
+        <span style="color: green; font-weight: bold;">
+            Player 1 Wins: @player1Wins
+        </span>
+
+        |
+
+        <span style="color: purple; font-weight: bold;">
+            Player 2 Wins: @player2Wins
+        </span>
+    </p>
+</article>
+
+<div>
+    <div class="board">
+    @for (var i = 0; i < 42; i++)
+    {
+        <span class="container">
+            <span></span>
+        </span>
+    }
+    </div>
+
+    @for (var i = 0; i < 42; i++)
+    {
+        <span class="@pieces[i]"></span>
+    }
+</div>
+
+@code {
+    private string[] pieces = new string[42];
+    private string winnerMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private int player1Wins = 0;
+    private int player2Wins = 0;
+    private bool winRecorded = false;
+
+    private string CurrentTurn => 
+        (winnerMessage == string.Empty) ? $"Player {State.PlayerTurn}'s Turn" : "";
+
+    private string ResetStyle => 
+        (winnerMessage == string.Empty) ? "display: none;" : "";
+
+    private async Task PlayPiece(byte col)
+    {
+        errorMessage = string.Empty;
+
+        try
+        {
+            var player = State.PlayerTurn;
+            var turn = State.CurrentTurn;
+            var landingRow = State.PlayPiece(col);
+
+            pieces[turn] = $"player{player} col{col} drop{landingRow}";
+
+            await JS.InvokeVoidAsync("playSound", "/sounds/drop.mp3");
+        }
+        catch (ArgumentException ex)
+        {
+            errorMessage = ex.Message;
+
+            await JS.InvokeVoidAsync("playSound", "/sounds/error.wav");
+        }
+
+        winnerMessage = State.CheckForWin() switch
+        {
+            GameState.WinState.Player1_Wins => "Player 1 Wins!",
+            GameState.WinState.Player2_Wins => "Player 2 Wins!",
+            GameState.WinState.Tie => "Game over!",
+            _ => ""
+        };
+
+        if (!string.IsNullOrEmpty(winnerMessage))
+        {
+            await JS.InvokeVoidAsync("playSound", "/sounds/win.wav");
+        }
+
+        if (!winRecorded)
+        {
+            if (winnerMessage == "Player 1 Wins!")
+            {
+                player1Wins++;
+                winRecorded = true;
+            }
+            else if (winnerMessage == "Player 2 Wins!")
+            {
+                player2Wins++;
+                winRecorded = true;
+            }
+        }
+    }
+        
+
+    [Parameter]
+    public Color BoardColor { get; set; } =
+        ColorTranslator.FromHtml("yellow");
+
+    [Parameter]
+    public Color Player1Color { get; set; } =
+        ColorTranslator.FromHtml("red");
+
+    [Parameter]
+    public Color Player2Color { get; set; } =
+        ColorTranslator.FromHtml("blue");
+
+    protected override void OnInitialized()
+    {
+        State.ResetBoard();
+    }
+
+    private void ResetGame()
+    {
+        State.ResetBoard();
+        winnerMessage = string.Empty;
+        errorMessage = string.Empty;
+        pieces = new string[42];
+        winRecorded = false;
+    }
+}
