@@ -7,7 +7,7 @@ nav {
     display: grid;
     grid-template-columns: repeat(7, 4em);
     margin-left: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     position: relative;
     z-index: 1000;
 }
@@ -26,6 +26,10 @@ nav span {
 article {
     margin: 10px 0;
     font-size: 1.2em;
+}
+
+article p {
+    margin-top: 15px;
 }
 
 .alert-danger {

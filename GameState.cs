@@ -12,6 +12,8 @@ public class GameState
 
     public int PlayerTurn { get; private set; } = 1;
     public int CurrentTurn { get; private set; } = 0;
+    public int Player1Wins { get; set; }
+    public int Player2Wins { get; set; }
 
     private int[] board = new int[42];
 

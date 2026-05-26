@@ -1,0 +1,51 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<PageTitle>Score Board</PageTitle>
+
+<h1>ConnectFour Scoreboard</h1>
+
+<p>
+    <span style="color: green; font-weight: bold;">
+        Player 1 Wins: @player1Wins
+    </span>
+</p>
+
+<p>
+    <span style="color: purple; font-weight: bold;">
+        Player 2 Wins: @player2Wins
+    </span>
+</p>
+
+<button class="btn btn-danger" @onclick="ResetScores">
+    Reset Scores
+</button>
+
+@code {
+    private int player1Wins;
+    private int player2Wins;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            player1Wins = int.Parse(
+                await JS.InvokeAsync<string>("loadScore", "player1Wins") ?? "0");
+
+            player2Wins = int.Parse(
+                await JS.InvokeAsync<string>("loadScore", "player2Wins") ?? "0");
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResetScores()
+    {
+        player1Wins = 0;
+        player2Wins = 0;
+
+        await JS.InvokeVoidAsync("saveScore", "player1Wins", 0);
+        await JS.InvokeVoidAsync("saveScore", "player2Wins", 0);
+    }
+}

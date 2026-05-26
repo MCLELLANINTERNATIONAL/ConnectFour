@@ -23,6 +23,14 @@
             const audio = new Audio(src);
             audio.play();
         };
+
+        window.saveScore = function (key, value) {
+            localStorage.setItem(key, value);
+        };
+
+        window.loadScore = function (key) {
+            return localStorage.getItem(key);
+        };
     </script>
 </body>
 
